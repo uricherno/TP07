@@ -491,74 +491,107 @@ body:has(.auth-card) {
     color: var(--texto-suave);
 }
 
+/* Contenedor de la imagen: permite el doble click/toque y el corazón grande encima */
+.post-media {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation; /* evita el zoom por doble toque en el celular */
+}
+
 .post-imagen {
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
     background: var(--borde-suave);
     border-block: 1px solid var(--borde-suave);
+    pointer-events: none; /* que no se pueda arrastrar la imagen al hacer doble click */
+}
+
+/* Corazón blanco grande que aparece al dar Me Gusta con doble click, como en Instagram */
+.corazon-grande {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30%;
+    max-width: 130px;
+    fill: #fff;
+    filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .3));
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+}
+
+.post-media.mostrar-corazon .corazon-grande {
+    animation: corazon-grande 1s ease-out;
 }
 
 .post-cuerpo {
-    padding: .5rem .9rem 0;
+    padding: .35rem .9rem 0;
 }
 
+/* Fila de íconos: Me Gusta y Comentar */
 .post-acciones {
     display: flex;
     align-items: center;
-    gap: .9rem;
+    gap: .35rem;
+    margin-left: -.45rem;
 }
 
-/* Botón Me Gusta: corazón grande + cantidad */
-.btn-like {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .3rem .2rem;
+.btn-icono {
+    display: inline-grid;
+    place-items: center;
+    padding: .45rem;
     border: none;
     background: none;
-    font: inherit;
-    font-size: .9rem;
-    font-weight: 600;
     color: var(--texto);
     cursor: pointer;
+    transition: opacity var(--transicion);
 }
 
-.btn-like .corazon {
-    display: inline-block;
-    font-size: 1.7rem;
-    line-height: 1;
-    transition: transform var(--transicion), color var(--transicion);
+.btn-icono:hover {
+    opacity: .55;
 }
 
-.btn-like:hover .corazon {
-    transform: scale(1.1);
-    color: var(--texto-suave);
+.icono {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
 }
 
-.btn-like.activo .corazon {
-    color: var(--color-like);
+/* Me Gusta activo: corazón relleno en rojo */
+.btn-like.activo .icono-corazon {
+    fill: var(--color-like);
+    stroke: var(--color-like);
 }
 
-.btn-like.animar .corazon {
-    animation: pop .45s cubic-bezier(.17, .89, .32, 1.49);
+.btn-like.activo:hover {
+    opacity: 1;
+}
+
+/* Rebote del corazón al dar Me Gusta */
+.btn-like.animar .icono-corazon {
+    animation: like-pop .45s cubic-bezier(.17, .89, .32, 1.49);
 }
 
 .btn-like:disabled {
     cursor: wait;
 }
 
-.texto-likes {
-    font-weight: 500;
+/* "12 Me gusta · 3 comentarios" */
+.post-stats {
+    margin: 0 0 .15rem;
+    font-size: .9rem;
     color: var(--texto-suave);
 }
 
-.contador-comentarios {
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
-    font-size: .9rem;
-    font-weight: 600;
+.post-stats strong {
+    color: var(--texto);
+    font-weight: 700;
 }
 
 .post-titulo {
@@ -712,10 +745,20 @@ body:has(.auth-card) {
 
 /* ---------- Animaciones ---------- */
 
-@keyframes pop {
+@keyframes like-pop {
     0% { transform: scale(1); }
-    40% { transform: scale(1.35); }
+    25% { transform: scale(1.25); }
+    50% { transform: scale(.92); }
     100% { transform: scale(1); }
+}
+
+@keyframes corazon-grande {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+    15% { opacity: .95; transform: translate(-50%, -50%) scale(1.2); }
+    30% { transform: translate(-50%, -50%) scale(.95); }
+    45% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: .95; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(.85); }
 }
 
 @keyframes aparecer {

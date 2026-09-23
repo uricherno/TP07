@@ -1,4 +1,10 @@
 @model Publicacion
+@{
+    // Íconos SVG (mismos que usa site.js al armar las publicaciones de "Ver más")
+    const string corazon = "M12 20.7s-7.2-4.4-9.3-8.6C1.1 8.9 2.7 5 6.3 4.4c2.1-.4 4 .6 5.7 2.6 1.7-2 3.6-3 5.7-2.6 3.6.6 5.2 4.5 3.6 7.7-2.1 4.2-9.3 8.6-9.3 8.6z";
+    const string globo = "M20.7 16.9A9.5 9.5 0 1 0 17 20.5L21.5 21.5z";
+    int cantComentarios = Model.Comentarios.Count;
+}
 
 <article class="post" data-id="@Model.Id">
     <header class="post-header">
@@ -9,20 +15,31 @@
         </div>
     </header>
 
-    <img class="post-imagen" src="~/img/publicaciones/@Model.Imagen" alt="@Model.Titulo" loading="lazy"
-         onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+    @* Doble click (o doble toque en el celular) sobre la imagen = Me Gusta, como en Instagram *@
+    <div class="post-media" title="Doble click para dar Me Gusta">
+        <img class="post-imagen" src="~/img/publicaciones/@Model.Imagen" alt="@Model.Titulo" loading="lazy"
+             onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+        <svg class="corazon-grande" viewBox="0 0 24 24" aria-hidden="true"><path d="@corazon" /></svg>
+    </div>
 
     <div class="post-cuerpo">
         <div class="post-acciones">
-            <button type="button" class="btn-like @(Model.UsuarioDioMeGusta ? "activo" : "")"
+            <button type="button" class="btn-icono btn-like @(Model.UsuarioDioMeGusta ? "activo" : "")"
                     aria-pressed="@(Model.UsuarioDioMeGusta ? "true" : "false")"
+                    aria-label="@(Model.UsuarioDioMeGusta ? "Ya no me gusta" : "Me gusta")"
                     title="@(Model.UsuarioDioMeGusta ? "Ya no me gusta" : "Me gusta")">
-                <span class="corazon" aria-hidden="true">@(Model.UsuarioDioMeGusta ? "♥" : "♡")</span>
-                <span class="contador-likes">@Model.CantidadMeGusta</span>
-                <span class="texto-likes">Me gusta</span>
+                <svg class="icono icono-corazon" viewBox="0 0 24 24" aria-hidden="true"><path d="@corazon" /></svg>
             </button>
-            <span class="contador-comentarios">💬 <span>@Model.Comentarios.Count</span></span>
+            <button type="button" class="btn-icono btn-comentar" aria-label="Comentar" title="Comentar">
+                <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="@globo" /></svg>
+            </button>
         </div>
+
+        <p class="post-stats">
+            <strong><span class="contador-likes">@Model.CantidadMeGusta</span> Me gusta</strong>
+            ·
+            <span class="contador-comentarios"><span>@cantComentarios</span> <span class="palabra-comentarios">@(cantComentarios == 1 ? "comentario" : "comentarios")</span></span>
+        </p>
 
         <h2 class="post-titulo">@Model.Titulo</h2>
         <p class="post-descripcion">@Model.Descripcion</p>
@@ -39,7 +56,7 @@
         </ul>
 
         <form class="form-comentario" autocomplete="off">
-            <input type="text" name="texto" placeholder="Escribí un comentario..." maxlength="500" />
+            <input type="text" name="texto" placeholder="Agregá un comentario..." maxlength="500" />
             <button type="submit" disabled>Comentar</button>
         </form>
         <p class="error-comentario" hidden></p>

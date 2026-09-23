@@ -1,0 +1,5 @@
+bin/
+obj/
+.vs/
+wwwroot/img/publicaciones/*
+!wwwroot/img/publicaciones/.gitkeep

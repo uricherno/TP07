@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Registrarse";
+}
+
+<section class="auth-card">
+    <h1>Creá tu cuenta</h1>
+    <p class="subtitulo">Compartí fotos y comentá lo que publican los demás.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alerta-error">@ViewBag.Error</div>
+    }
+
+    <form asp-controller="Account" asp-action="Registro" method="post" class="formulario">
+        <div class="fila-doble">
+            <div>
+                <label for="nombre">Nombre</label>
+                <input id="nombre" name="nombre" type="text" value="@ViewBag.Nombre" maxlength="50" required />
+            </div>
+            <div>
+                <label for="apellido">Apellido</label>
+                <input id="apellido" name="apellido" type="text" value="@ViewBag.Apellido" maxlength="50" required />
+            </div>
+        </div>
+
+        <label for="nombreUsuario">Usuario</label>
+        <input id="nombreUsuario" name="nombreUsuario" type="text" value="@ViewBag.NombreUsuario"
+               maxlength="50" autocomplete="username" required />
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password" minlength="4" autocomplete="new-password" required />
+
+        <label for="confirmarContrasena">Repetir contraseña</label>
+        <input id="confirmarContrasena" name="confirmarContrasena" type="password" minlength="4" autocomplete="new-password" required />
+
+        <button type="submit" class="btn btn-primario btn-bloque">Registrarme</button>
+    </form>
+
+    <p class="auth-pie">¿Ya tenés cuenta? <a asp-action="Login">Iniciá sesión</a></p>
+</section>

@@ -1,0 +1,47 @@
+@model Publicacion
+
+<article class="post" data-id="@Model.Id">
+    <header class="post-header">
+        <span class="avatar">@Model.NombreUsuario.Substring(0, 1).ToUpper()</span>
+        <div>
+            <span class="post-usuario">@Model.NombreUsuario</span>
+            <time class="post-fecha">@Model.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</time>
+        </div>
+    </header>
+
+    <img class="post-imagen" src="~/img/publicaciones/@Model.Imagen" alt="@Model.Titulo" loading="lazy"
+         onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+
+    <div class="post-cuerpo">
+        <div class="post-acciones">
+            <button type="button" class="btn-like @(Model.UsuarioDioMeGusta ? "activo" : "")"
+                    aria-pressed="@(Model.UsuarioDioMeGusta ? "true" : "false")"
+                    title="@(Model.UsuarioDioMeGusta ? "Ya no me gusta" : "Me gusta")">
+                <span class="corazon" aria-hidden="true">@(Model.UsuarioDioMeGusta ? "♥" : "♡")</span>
+                <span class="contador-likes">@Model.CantidadMeGusta</span>
+                <span class="texto-likes">Me gusta</span>
+            </button>
+            <span class="contador-comentarios">💬 <span>@Model.Comentarios.Count</span></span>
+        </div>
+
+        <h2 class="post-titulo">@Model.Titulo</h2>
+        <p class="post-descripcion">@Model.Descripcion</p>
+
+        <ul class="comentarios">
+            @foreach (var c in Model.Comentarios)
+            {
+                <li class="comentario">
+                    <span class="comentario-usuario">@c.NombreUsuario</span>
+                    <span class="comentario-texto">@c.Texto</span>
+                    <time class="comentario-fecha">@c.FechaComentario.ToString("dd/MM/yyyy HH:mm")</time>
+                </li>
+            }
+        </ul>
+
+        <form class="form-comentario" autocomplete="off">
+            <input type="text" name="texto" placeholder="Escribí un comentario..." maxlength="500" />
+            <button type="submit" disabled>Comentar</button>
+        </form>
+        <p class="error-comentario" hidden></p>
+    </div>
+</article>

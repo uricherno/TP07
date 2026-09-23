@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Nueva publicación";
+}
+
+<section class="auth-card card-ancha">
+    <h1>Nueva publicación</h1>
+    <p class="subtitulo">Subí una imagen y contá de qué se trata.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alerta-error">@ViewBag.Error</div>
+    }
+
+    <form asp-controller="Publicacion" asp-action="Crear" method="post" enctype="multipart/form-data" class="formulario">
+        <label for="imagen" class="zona-imagen" id="zonaImagen">
+            <img id="previewImagen" alt="Vista previa" hidden />
+            <span id="textoZonaImagen">
+                <span class="zona-imagen-icono">🖼️</span>
+                Hacé click para elegir una imagen<br />
+                <small>JPG, PNG, GIF o WEBP · máx. 5 MB</small>
+            </span>
+        </label>
+        <input id="imagen" name="imagen" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" class="input-oculto" required />
+
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" type="text" value="@ViewBag.Titulo" maxlength="200" required />
+
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" name="descripcion" rows="4" required>@ViewBag.Descripcion</textarea>
+
+        <div class="acciones-form">
+            <a class="btn btn-secundario" asp-action="Index">Cancelar</a>
+            <button type="submit" class="btn btn-primario">Publicar</button>
+        </div>
+    </form>
+</section>

@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<section class="auth-card">
+    <h1>Bienvenido de nuevo</h1>
+    <p class="subtitulo">Iniciá sesión para ver qué están compartiendo.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alerta-error">@ViewBag.Error</div>
+    }
+
+    <form asp-controller="Account" asp-action="Login" method="post" class="formulario">
+        <label for="nombreUsuario">Usuario</label>
+        <input id="nombreUsuario" name="nombreUsuario" type="text" value="@ViewBag.NombreUsuario"
+               maxlength="50" autocomplete="username" required autofocus />
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required />
+
+        <button type="submit" class="btn btn-primario btn-bloque">Ingresar</button>
+    </form>
+
+    <p class="auth-pie">¿No tenés cuenta? <a asp-action="Registro">Registrate</a></p>
+</section>

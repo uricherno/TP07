@@ -21,6 +21,14 @@
     --texto-suave: #737373;
     --borde: #dbdbdb;
     --borde-suave: #efefef;
+    --texto-tenue: #a8a8a8;
+    --navbar-fondo: rgba(255, 255, 255, .9);
+    --error-fondo: #fff1f2;
+    --error-borde: #ffd5d9;
+    --exito: #1f9d55;
+    --primario-borde: #cfc9f7;
+    --primario-hover: #e9e5ff;
+    color-scheme: light;
 
     /* Formas */
     --radio: 12px;
@@ -31,6 +39,29 @@
     /* Medidas */
     --ancho-feed: 470px;
     --alto-navbar: 60px;
+}
+
+/* Modo oscuro: solo se redefinen los colores; el resto del CSS usa las mismas variables.
+   El atributo data-tema lo pone el script del <head> (según lo guardado en localStorage o el sistema). */
+:root[data-tema="oscuro"] {
+    color-scheme: dark;
+    --color-primario: #7d70f0;
+    --color-primario-oscuro: #9a90f5;
+    --color-primario-suave: #26224a;
+    --fondo: #0e0e11;
+    --tarjeta: #18181d;
+    --texto: #ededf0;
+    --texto-suave: #a3a3ad;
+    --texto-tenue: #6f6f79;
+    --borde: #33333b;
+    --borde-suave: #26262d;
+    --navbar-fondo: rgba(20, 20, 24, .85);
+    --error-fondo: #3a1d22;
+    --error-borde: #5c2a31;
+    --exito: #3ecf7e;
+    --primario-borde: #4a4390;
+    --primario-hover: #312b5e;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .4);
 }
 
 /* ---------- Base ---------- */
@@ -153,14 +184,14 @@ img {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(255, 255, 255, .9);
+    background: var(--navbar-fondo);
     backdrop-filter: saturate(180%) blur(12px);
     border-bottom: 1px solid var(--borde);
 }
 
 .navbar-contenido {
     max-width: 935px;
-    height: var(--alto-navbar);
+    min-height: var(--alto-navbar);
     margin: 0 auto;
     padding: 0 1rem;
     display: flex;
@@ -202,8 +233,17 @@ img {
     display: flex;
     align-items: center;
     gap: .5rem;
+    padding: .25rem .6rem .25rem .25rem;
+    border-radius: 999px;
     font-weight: 600;
     font-size: .88rem;
+    color: var(--texto);
+    transition: background var(--transicion);
+}
+
+.navbar-usuario:hover {
+    background: var(--borde-suave);
+    text-decoration: none;
 }
 
 /* ---------- Layout ---------- */
@@ -239,15 +279,24 @@ img {
     box-shadow: inset 0 0 0 1.5px var(--tarjeta);
 }
 
+.avatar-mediano {
+    width: 56px;
+    height: 56px;
+    font-size: 1.3rem;
+}
+
 /* ---------- Páginas de login, registro y crear ---------- */
 
-/* Fondo con degradado suave solo en las páginas que tienen una tarjeta de formulario */
-body:has(.auth-card) {
+/* Fondo con degradado suave en los formularios, el inicio y el perfil (así no quedan zonas vacías y planas) */
+body:has(.auth-card),
+body:has(.inicio),
+body:has(.perfil) {
     background:
         radial-gradient(circle at 10% 15%, rgba(214, 41, 118, .10), transparent 40%),
         radial-gradient(circle at 90% 20%, rgba(79, 91, 213, .12), transparent 40%),
         radial-gradient(circle at 50% 100%, rgba(250, 126, 30, .10), transparent 45%),
         var(--fondo);
+    background-attachment: fixed;
 }
 
 .auth-card {
@@ -347,9 +396,9 @@ body:has(.auth-card) {
     gap: .5rem;
     padding: .7rem .9rem;
     border-radius: var(--radio-chico);
-    background: #fff1f2;
+    background: var(--error-fondo);
     color: var(--color-error);
-    border: 1px solid #ffd5d9;
+    border: 1px solid var(--error-borde);
     font-size: .88rem;
     font-weight: 500;
 }
@@ -385,7 +434,7 @@ body:has(.auth-card) {
     align-items: center;
     justify-content: center;
     text-align: center;
-    border: 2px dashed #cfc9f7;
+    border: 2px dashed var(--primario-borde);
     border-radius: var(--radio);
     background: var(--color-primario-suave);
     color: var(--texto-suave);
@@ -397,7 +446,7 @@ body:has(.auth-card) {
 
 .formulario .zona-imagen:hover {
     border-color: var(--color-primario);
-    background: #e9e5ff;
+    background: var(--primario-hover);
 }
 
 .zona-imagen small {
@@ -426,6 +475,344 @@ body:has(.auth-card) {
 
 .acciones-form .btn {
     margin-top: 0 !important;
+}
+
+/* ---------- Inicio: feed + barra lateral ---------- */
+
+.inicio {
+    display: grid;
+    grid-template-columns: minmax(0, var(--ancho-feed)) 300px;
+    justify-content: center;
+    align-items: start;
+    gap: 2.5rem;
+}
+
+.barra-lateral {
+    position: sticky;
+    top: calc(var(--alto-navbar) + 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: aparecer .35s ease both;
+}
+
+.tarjeta-yo,
+.tarjeta-lateral-lista,
+.lateral-stats {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+}
+
+.tarjeta-yo {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: 1rem;
+}
+
+.lateral-texto {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.lateral-usuario {
+    font-weight: 600;
+    font-size: .9rem;
+    color: var(--texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lateral-usuario:hover {
+    color: var(--color-primario);
+    text-decoration: none;
+}
+
+.lateral-sub {
+    font-size: .8rem;
+    color: var(--texto-suave);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lateral-link {
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.lateral-stats {
+    list-style: none;
+    margin: 0;
+    padding: .9rem .5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+}
+
+.lateral-stats li + li {
+    border-left: 1px solid var(--borde-suave);
+}
+
+.lateral-stats strong {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: var(--degradado);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.lateral-stats span {
+    font-size: .75rem;
+    color: var(--texto-suave);
+}
+
+.tarjeta-lateral-lista {
+    padding: 1rem 1rem .6rem;
+}
+
+.lateral-titulo {
+    margin: 0 0 .6rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+}
+
+.lista-sugeridos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-sugeridos li {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .45rem 0;
+}
+
+.lateral-pie {
+    margin: .2rem 0 0;
+    font-size: .75rem;
+    color: var(--texto-tenue);
+    text-align: center;
+}
+
+/* ---------- Perfil: columna lateral con los datos + grilla al costado ---------- */
+
+.perfil {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
+    gap: 2rem;
+}
+
+.perfil-lateral {
+    position: sticky;
+    top: calc(var(--alto-navbar) + 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.perfil-tarjeta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.8rem 1.3rem 1.3rem;
+    text-align: center;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    animation: aparecer .35s ease both;
+}
+
+.avatar-perfil {
+    width: 120px;
+    height: 120px;
+    font-size: 3rem;
+    border-width: 4px;
+    box-shadow: inset 0 0 0 5px var(--tarjeta);
+}
+
+.perfil-usuario {
+    margin: .9rem 0 .1rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    overflow-wrap: anywhere;
+}
+
+.perfil-nombre {
+    margin: 0;
+    color: var(--texto-suave);
+    font-size: .92rem;
+}
+
+.perfil-etiqueta {
+    margin-top: .6rem;
+    padding: .15rem .65rem;
+    border-radius: 999px;
+    background: var(--color-primario-suave);
+    color: var(--color-primario);
+    font-size: .75rem;
+    font-weight: 600;
+}
+
+/* Reutiliza el estilo de .lateral-stats, pero dentro de la tarjeta */
+.perfil-stats {
+    align-self: stretch;
+    margin: 1.2rem 0 0;
+    border: none;
+    border-block: 1px solid var(--borde-suave);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.perfil-acciones {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    margin-top: 1.2rem;
+}
+
+.perfil-principal {
+    min-width: 0;
+}
+
+.perfil-pestana {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid var(--borde);
+    margin-bottom: 1rem;
+}
+
+.perfil-pestana .activa {
+    margin-top: -1px;
+    padding: .9rem 0;
+    border-top: 1px solid var(--texto);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+/* Grilla de 3 columnas con miniaturas cuadradas */
+.grilla-perfil {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.grilla-perfil:empty {
+    display: none;
+}
+
+.miniatura {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border: none;
+    background: var(--borde-suave);
+    overflow: hidden;
+    cursor: pointer;
+    animation: aparecer .35s ease both;
+}
+
+.miniatura img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s ease;
+}
+
+.miniatura:hover img {
+    transform: scale(1.04);
+}
+
+.miniatura-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6rem;
+    background: rgba(0, 0, 0, .35);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.05rem;
+    opacity: 0;
+    transition: opacity var(--transicion);
+}
+
+.miniatura:hover .miniatura-overlay,
+.miniatura:focus-visible .miniatura-overlay {
+    opacity: 1;
+}
+
+.miniatura.cargando {
+    cursor: wait;
+    opacity: .7;
+}
+
+.ver-mas-perfil {
+    max-width: 320px;
+}
+
+/* Modal con la publicación completa */
+.modal-publicacion {
+    width: min(470px, calc(100% - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    border: none;
+    border-radius: var(--radio);
+    background: transparent;
+    overflow: visible;
+}
+
+.modal-publicacion::backdrop {
+    background: rgba(0, 0, 0, .65);
+}
+
+.modal-contenido {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    border-radius: var(--radio);
+}
+
+.modal-contenido .post {
+    border: none;
+}
+
+.modal-cerrar {
+    position: absolute;
+    top: -.4rem;
+    right: -2.6rem;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .15);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background var(--transicion);
+}
+
+.modal-cerrar:hover {
+    background: rgba(255, 255, 255, .3);
 }
 
 /* ---------- Feed ---------- */
@@ -483,6 +870,16 @@ body:has(.auth-card) {
     font-weight: 600;
     font-size: .92rem;
     line-height: 1.2;
+    color: var(--texto);
+}
+
+.post-usuario:hover {
+    color: var(--color-primario);
+    text-decoration: none;
+}
+
+a.avatar:hover {
+    text-decoration: none;
 }
 
 .post-fecha {
@@ -626,15 +1023,66 @@ body:has(.auth-card) {
 }
 
 .comentario {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
     padding: .35rem .4rem;
     border-radius: 6px;
     font-size: .9rem;
     overflow-wrap: anywhere;
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+.comentario-cuerpo {
+    flex: 1;
+    min-width: 0;
 }
 
 .comentario-usuario {
     font-weight: 600;
     margin-right: .35rem;
+    color: var(--texto);
+}
+
+.comentario-usuario:hover {
+    color: var(--color-primario);
+    text-decoration: none;
+}
+
+/* ✕ para eliminar un comentario propio: se ve al pasar el mouse (siempre visible en pantallas táctiles) */
+.btn-eliminar-comentario {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--texto-suave);
+    font-size: .75rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transicion), background var(--transicion), color var(--transicion);
+}
+
+.comentario:hover .btn-eliminar-comentario,
+.btn-eliminar-comentario:focus-visible {
+    opacity: 1;
+}
+
+.btn-eliminar-comentario:hover {
+    background: var(--error-fondo);
+    color: var(--color-error);
+}
+
+@media (hover: none) {
+    .btn-eliminar-comentario {
+        opacity: 1;
+    }
+}
+
+.comentario.saliendo {
+    opacity: 0;
+    transform: translateX(12px);
 }
 
 .comentario-fecha {
@@ -703,7 +1151,7 @@ body:has(.auth-card) {
     color: var(--color-error);
     font-size: .82rem;
     font-weight: 500;
-    background: #fff1f2;
+    background: var(--error-fondo);
 }
 
 /* ---------- Ver más ---------- */
@@ -721,7 +1169,7 @@ body:has(.auth-card) {
 
 #btnVerMas:hover:not(:disabled) {
     background: var(--color-primario-suave);
-    border-color: #cfc9f7;
+    border-color: var(--primario-borde);
 }
 
 /* "No hay más publicaciones" entre dos líneas */
@@ -743,7 +1191,555 @@ body:has(.auth-card) {
     background: var(--borde);
 }
 
+/* ---------- Switch de tema ---------- */
+
+.btn-tema {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--borde);
+    border-radius: 50%;
+    background: var(--tarjeta);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background var(--transicion), transform var(--transicion);
+}
+
+.btn-tema:hover {
+    background: var(--borde-suave);
+}
+
+.btn-tema:active {
+    transform: rotate(-20deg) scale(.94);
+}
+
+/* Se muestra la luna en modo claro y el sol en modo oscuro */
+.tema-icono-oscuro,
+:root[data-tema="oscuro"] .tema-icono-claro {
+    display: none;
+}
+
+:root[data-tema="oscuro"] .tema-icono-oscuro {
+    display: inline;
+}
+
+body,
+.post,
+.navbar,
+.perfil-tarjeta,
+.tarjeta-yo,
+.tarjeta-lateral-lista,
+.lateral-stats,
+.auth-card {
+    transition: background-color .25s ease, border-color .25s ease, color .25s ease;
+}
+
+/* ---------- Buscador de la navbar ---------- */
+
+.buscador {
+    position: relative;
+    flex: 1;
+    max-width: 300px;
+}
+
+.buscador-icono {
+    position: absolute;
+    left: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .8rem;
+    opacity: .6;
+    pointer-events: none;
+}
+
+.buscador input {
+    width: 100%;
+    padding: .5rem .8rem .5rem 2.1rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--borde-suave);
+    font: inherit;
+    font-size: .88rem;
+    color: var(--texto);
+    transition: border-color var(--transicion), background var(--transicion), box-shadow var(--transicion);
+}
+
+.buscador input::placeholder {
+    color: var(--texto-suave);
+}
+
+.buscador input:focus {
+    outline: none;
+    border-color: var(--color-primario);
+    background: var(--tarjeta);
+    box-shadow: 0 0 0 3px var(--color-primario-suave);
+}
+
+.buscador-resultados {
+    position: absolute;
+    top: calc(100% + .5rem);
+    left: 0;
+    right: 0;
+    min-width: 280px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: .4rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    z-index: 20;
+    animation: aparecer .15s ease both;
+}
+
+.buscador-seccion {
+    margin: .4rem .5rem .2rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+}
+
+.buscador-item {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .45rem .5rem;
+    border-radius: var(--radio-chico);
+    color: var(--texto);
+}
+
+.buscador-item:hover,
+.buscador-item:focus-visible {
+    background: var(--borde-suave);
+    text-decoration: none;
+    outline: none;
+}
+
+.buscador-miniatura {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.buscador-vacio {
+    margin: 0;
+    padding: .8rem .6rem;
+    font-size: .88rem;
+    color: var(--texto-suave);
+    text-align: center;
+}
+
+/* ---------- Orden del feed ---------- */
+
+.orden-feed {
+    display: flex;
+    gap: .4rem;
+    max-width: var(--ancho-feed);
+    margin: 0 auto 1rem;
+    padding: .3rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+}
+
+.orden-feed a {
+    flex: 1;
+    padding: .45rem .8rem;
+    border-radius: 999px;
+    text-align: center;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+    transition: background var(--transicion), color var(--transicion);
+}
+
+.orden-feed a:hover {
+    color: var(--texto);
+    text-decoration: none;
+}
+
+.orden-feed a.activo {
+    background: var(--color-primario);
+    color: #fff;
+}
+
+/* ---------- Menú ⋯ de las publicaciones propias ---------- */
+
+.post-autor {
+    flex: 1;
+    min-width: 0;
+}
+
+.menu-post {
+    position: relative;
+}
+
+.menu-post summary {
+    list-style: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--texto);
+    cursor: pointer;
+    transition: background var(--transicion);
+}
+
+.menu-post summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu-post summary:hover,
+.menu-post[open] summary {
+    background: var(--borde-suave);
+}
+
+.menu-post-opciones {
+    position: absolute;
+    right: 0;
+    top: calc(100% + .3rem);
+    z-index: 5;
+    min-width: 150px;
+    padding: .3rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-chico);
+    box-shadow: var(--sombra);
+    animation: aparecer .12s ease both;
+}
+
+.menu-post-opciones a,
+.menu-post-opciones button {
+    display: block;
+    width: 100%;
+    padding: .5rem .7rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    font-size: .88rem;
+    text-align: left;
+    color: var(--texto);
+    cursor: pointer;
+}
+
+.menu-post-opciones a:hover,
+.menu-post-opciones button:hover {
+    background: var(--borde-suave);
+    text-decoration: none;
+}
+
+.menu-post-opciones .btn-eliminar-publicacion {
+    color: var(--color-error);
+}
+
+/* Con keyframes (y no transition) porque .post ya tiene la animación de entrada "aparecer" */
+.post.saliendo {
+    animation: desaparecer .3s ease forwards;
+    pointer-events: none;
+}
+
+/* "N Me gusta" es un botón que abre la lista de quiénes dieron Me Gusta */
+.btn-ver-likes {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 700;
+    color: var(--texto);
+    cursor: pointer;
+}
+
+.btn-ver-likes:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Contadores de caracteres ---------- */
+
+.label-con-contador {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.contador-caracteres {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--texto-suave);
+    font-variant-numeric: tabular-nums;
+    transition: color var(--transicion);
+}
+
+.contador-caracteres.cerca {
+    color: #e08a00;
+}
+
+.contador-caracteres.limite {
+    color: var(--color-error);
+    font-weight: 700;
+}
+
+.contador-comentario {
+    flex-shrink: 0;
+    min-width: 2.2em;
+    text-align: right;
+}
+
+/* ---------- Crear / Editar: arrastrar imagen e info de compresión ---------- */
+
+.formulario .zona-imagen.arrastrando {
+    border-color: var(--color-primario);
+    border-style: solid;
+    background: var(--primario-hover);
+    transform: scale(1.01);
+}
+
+.info-imagen {
+    min-height: 1.2em;
+    margin: .45rem 0 0;
+    font-size: .8rem;
+    color: var(--texto-suave);
+}
+
+.info-imagen.error {
+    color: var(--color-error);
+    font-weight: 500;
+}
+
+/* ---------- Diálogos (confirmación y lista de Me Gusta) ---------- */
+
+.dialogo {
+    width: min(380px, calc(100% - 2rem));
+    padding: 0;
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    background: var(--tarjeta);
+    color: var(--texto);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+
+.dialogo[open] {
+    animation: aparecer-dialogo .18s ease both;
+}
+
+.dialogo::backdrop {
+    background: rgba(0, 0, 0, .55);
+}
+
+.dialogo-contenido {
+    padding: 1.6rem 1.5rem 1.3rem;
+    text-align: center;
+}
+
+.dialogo-titulo {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.dialogo-mensaje {
+    margin: .5rem 0 1.4rem;
+    font-size: .92rem;
+    color: var(--texto-suave);
+    overflow-wrap: anywhere;
+}
+
+.dialogo-botones {
+    display: flex;
+    gap: .6rem;
+}
+
+.dialogo-botones .btn {
+    flex: 1;
+}
+
+.btn-peligro {
+    background: var(--color-error);
+    color: #fff;
+}
+
+.btn-peligro:hover:not(:disabled) {
+    filter: brightness(.92);
+}
+
+.dialogo-encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: .9rem 1rem;
+    border-bottom: 1px solid var(--borde-suave);
+}
+
+.dialogo-cerrar {
+    position: absolute;
+    right: .6rem;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--texto);
+    font-size: .95rem;
+    cursor: pointer;
+}
+
+.dialogo-cerrar:hover {
+    background: var(--borde-suave);
+}
+
+.lista-likes {
+    list-style: none;
+    margin: 0;
+    padding: .4rem 1rem .8rem;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.lista-likes li {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .45rem 0;
+}
+
+.lista-likes .lista-likes-vacia {
+    justify-content: center;
+    padding: 1.2rem 0;
+    color: var(--texto-suave);
+    font-size: .9rem;
+}
+
+/* ---------- Toasts ---------- */
+
+.toasts {
+    position: fixed;
+    left: 50%;
+    bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    width: min(420px, calc(100% - 2rem));
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    padding: .75rem 1rem;
+    border-radius: var(--radio);
+    background: #262626;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+:root[data-tema="oscuro"] .toast {
+    background: #f0f0f3;
+    color: #18181d;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: none;
+}
+
+.toast::before {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.toast-error::before {
+    content: "!";
+    background: var(--color-error);
+}
+
+.toast-exito::before {
+    content: "✓";
+    background: var(--exito);
+}
+
+/* ---------- Página 404 ---------- */
+
+.no-encontrado {
+    max-width: 440px;
+    margin: 2.5rem auto;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    animation: aparecer .35s ease both;
+}
+
+.no-encontrado-codigo {
+    display: block;
+    font-size: 4.5rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.04em;
+    background: var(--degradado);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.no-encontrado h1 {
+    margin: .8rem 0 .4rem;
+    font-size: 1.3rem;
+}
+
+.no-encontrado p {
+    margin: 0 0 1.6rem;
+    color: var(--texto-suave);
+    overflow-wrap: anywhere;
+}
+
+.no-encontrado-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .6rem;
+}
+
 /* ---------- Animaciones ---------- */
+
+@keyframes desaparecer {
+    to { opacity: 0; transform: scale(.97); }
+}
+
+@keyframes aparecer-dialogo {
+    from { opacity: 0; transform: translateY(8px) scale(.97); }
+    to { opacity: 1; transform: none; }
+}
 
 @keyframes like-pop {
     0% { transform: scale(1); }
@@ -780,9 +1776,81 @@ body:has(.auth-card) {
     }
 }
 
+/* ---------- Tablet: sin barra lateral ---------- */
+
+@media (max-width: 1000px) {
+    .inicio {
+        grid-template-columns: minmax(0, var(--ancho-feed));
+    }
+
+    .barra-lateral {
+        display: none;
+    }
+
+    .perfil {
+        grid-template-columns: 250px minmax(0, 1fr);
+        gap: 1.4rem;
+    }
+
+    .modal-cerrar {
+        top: .6rem;
+        right: .6rem;
+        z-index: 1;
+        background: rgba(0, 0, 0, .45);
+    }
+}
+
+/* Pantallas angostas: la columna del perfil pasa arriba de la grilla */
+@media (max-width: 760px) {
+    .perfil {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .perfil-lateral {
+        position: static;
+    }
+}
+
 /* ---------- Celular ---------- */
 
 @media (max-width: 640px) {
+    .perfil {
+        gap: .8rem;
+    }
+
+    .perfil-tarjeta {
+        padding: 1.4rem 1rem 1rem;
+        border-radius: 0;
+        border-inline: none;
+        border-top: none;
+        box-shadow: none;
+    }
+
+    .avatar-perfil {
+        width: 88px;
+        height: 88px;
+        font-size: 2.2rem;
+        border-width: 3px;
+        box-shadow: inset 0 0 0 3px var(--tarjeta);
+    }
+
+    .perfil-usuario {
+        font-size: 1.2rem;
+    }
+
+    .grilla-perfil {
+        gap: 2px;
+    }
+
+    .miniatura-overlay {
+        gap: .8rem;
+        font-size: .85rem;
+    }
+
+    .ver-mas-perfil {
+        padding: 0 1rem;
+    }
+
     .contenedor {
         padding: 0 0 3rem;
     }
@@ -792,11 +1860,37 @@ body:has(.auth-card) {
     }
 
     .navbar-links {
-        gap: .8rem;
+        gap: .6rem;
     }
 
     .logo {
         font-size: 1.4rem;
+    }
+
+    /* El buscador pasa a una segunda fila de la navbar, a todo el ancho */
+    .navbar-contenido {
+        flex-wrap: wrap;
+        row-gap: 0;
+    }
+
+    .buscador {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+        margin-bottom: .6rem;
+    }
+
+    .buscador-resultados {
+        min-width: 0;
+    }
+
+    .orden-feed {
+        margin: .6rem 1rem;
+    }
+
+    .no-encontrado {
+        margin: 1.5rem 1rem;
+        padding: 2rem 1.3rem;
     }
 
     /* El feed ocupa todo el ancho, sin bordes laterales, como en la app */

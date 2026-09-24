@@ -1,0 +1,14 @@
+@model string
+@{
+    ViewData["Title"] = "No encontrado";
+}
+
+<section class="no-encontrado">
+    <span class="no-encontrado-codigo">404</span>
+    <h1>No encontramos lo que buscás</h1>
+    <p>@Model</p>
+    <div class="no-encontrado-acciones">
+        <a class="btn btn-primario" asp-controller="Publicacion" asp-action="Index">Volver al inicio</a>
+        <a class="btn btn-secundario" href="/Perfil">Ir a mi perfil</a>
+    </div>
+</section>

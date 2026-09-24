@@ -1,0 +1,48 @@
+@model Publicacion?
+@{
+    // Mismo formulario para Crear (Model == null) y Editar (Model = la publicación)
+    bool editando = Model != null;
+    string titulo = ViewBag.Titulo ?? "";
+    string descripcion = ViewBag.Descripcion ?? "";
+}
+
+@if (ViewBag.Error != null)
+{
+    <div class="alerta-error">@ViewBag.Error</div>
+}
+
+<form asp-controller="Publicacion" asp-action="@(editando ? "Editar" : "Crear")" asp-route-id="@Model?.Id"
+      method="post" enctype="multipart/form-data" class="formulario" id="formPublicacion">
+    @* Se puede hacer click o arrastrar una imagen encima *@
+    <label for="imagen" class="zona-imagen" id="zonaImagen">
+        <img id="previewImagen" alt="Vista previa"
+             src="@(editando ? Imagenes.Url(Model!) : null)" hidden="@(!editando)" />
+        <span id="textoZonaImagen" hidden="@editando">
+            <span class="zona-imagen-icono">🖼️</span>
+            Hacé click o arrastrá una imagen acá<br />
+            <small>JPG, PNG, GIF o WEBP · máx. 5 MB</small>
+        </span>
+    </label>
+    <p class="info-imagen" id="infoImagen" aria-live="polite">
+        @(editando ? "Dejala como está o elegí otra para reemplazarla." : "")
+    </p>
+    <input id="imagen" name="imagen" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" class="input-oculto"
+           required="@(!editando)" />
+
+    <div class="label-con-contador">
+        <label for="titulo">Título</label>
+        <span class="contador-caracteres" data-contador-de="titulo"></span>
+    </div>
+    <input id="titulo" name="titulo" type="text" value="@titulo" maxlength="200" required />
+
+    <div class="label-con-contador">
+        <label for="descripcion">Descripción</label>
+        <span class="contador-caracteres" data-contador-de="descripcion"></span>
+    </div>
+    <textarea id="descripcion" name="descripcion" rows="4" maxlength="2000" required>@descripcion</textarea>
+
+    <div class="acciones-form">
+        <a class="btn btn-secundario" href="@(editando ? "/Perfil" : Url.Action("Index"))">Cancelar</a>
+        <button type="submit" class="btn btn-primario" id="btnPublicar">@(editando ? "Guardar cambios" : "Publicar")</button>
+    </div>
+</form>

@@ -15,6 +15,8 @@ BD.ConnectionString = builder.Configuration.GetConnectionString("TP07")!;
 
 var app = builder.Build();
 
+Imagenes.WebRootPath = app.Environment.WebRootPath;
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

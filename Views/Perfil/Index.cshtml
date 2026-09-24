@@ -1,0 +1,106 @@
+@model Perfil
+@{
+    ViewData["Title"] = "@" + Model.NombreUsuario;
+    var publicaciones = (List<Publicacion>)ViewBag.Publicaciones;
+    var otrosUsuarios = (List<Perfil>)ViewBag.OtrosUsuarios;
+    bool esMiPerfil = (bool)ViewBag.EsMiPerfil;
+}
+
+@* Token antifalsificación para los Me Gusta y comentarios dentro del modal *@
+@Html.AntiForgeryToken()
+
+<div class="perfil">
+    @* Columna lateral: datos del usuario *@
+    <aside class="perfil-lateral">
+        <div class="perfil-tarjeta">
+            <span class="avatar avatar-perfil">@Model.NombreUsuario.Substring(0, 1).ToUpper()</span>
+            <h1 class="perfil-usuario">@Model.NombreUsuario</h1>
+            <p class="perfil-nombre">@Model.Nombre @Model.Apellido</p>
+            @if (esMiPerfil)
+            {
+                <span class="perfil-etiqueta">Tu perfil</span>
+            }
+
+            <ul class="lateral-stats perfil-stats">
+                <li><strong>@Model.CantidadPublicaciones</strong><span>@(Model.CantidadPublicaciones == 1 ? "publicación" : "publicaciones")</span></li>
+                <li><strong>@Model.CantidadMeGustaRecibidos</strong><span>me gusta</span></li>
+                <li><strong>@Model.CantidadComentariosRecibidos</strong><span>@(Model.CantidadComentariosRecibidos == 1 ? "comentario" : "comentarios")</span></li>
+            </ul>
+
+            <div class="perfil-acciones">
+                @if (esMiPerfil)
+                {
+                    <a class="btn btn-primario btn-bloque" asp-controller="Publicacion" asp-action="Crear">＋ Nueva publicación</a>
+                }
+                <a class="btn btn-secundario btn-bloque" asp-controller="Publicacion" asp-action="Index">← Volver al inicio</a>
+            </div>
+        </div>
+
+        @if (otrosUsuarios.Count > 0)
+        {
+            <div class="tarjeta-lateral-lista ocultar-mobile">
+                <h2 class="lateral-titulo">Otras personas</h2>
+                <ul class="lista-sugeridos">
+                    @foreach (var u in otrosUsuarios)
+                    {
+                        <li>
+                            <a class="avatar avatar-chico" href="/Perfil/@u.NombreUsuario" aria-hidden="true" tabindex="-1">@u.NombreUsuario.Substring(0, 1).ToUpper()</a>
+                            <div class="lateral-texto">
+                                <a class="lateral-usuario" href="/Perfil/@u.NombreUsuario">@u.NombreUsuario</a>
+                                <span class="lateral-sub">@u.CantidadPublicaciones @(u.CantidadPublicaciones == 1 ? "publicación" : "publicaciones")</span>
+                            </div>
+                            <a class="lateral-link" href="/Perfil/@u.NombreUsuario">Ver</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </aside>
+
+    @* Columna principal: publicaciones del usuario *@
+    <section class="perfil-principal">
+        <div class="perfil-pestana">
+            <span class="activa">▦ Publicaciones</span>
+        </div>
+
+        @if (publicaciones.Count == 0)
+        {
+            <div class="feed-vacio">
+                <p>@(esMiPerfil ? "Todavía no publicaste nada." : "Este usuario todavía no publicó nada.")</p>
+                @if (esMiPerfil)
+                {
+                    <a class="btn btn-primario" asp-controller="Publicacion" asp-action="Crear">Crear mi primera publicación</a>
+                }
+            </div>
+        }
+
+        <div class="grilla-perfil" id="grillaPerfil">
+            @foreach (var p in publicaciones)
+            {
+                <button type="button" class="miniatura" data-id="@p.Id" aria-label="Ver publicación: @p.Titulo">
+                    <img src="@Imagenes.Url(p)" alt="@p.Titulo" loading="lazy"
+                         onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+                    <span class="miniatura-overlay">
+                        <span>❤ <span class="miniatura-likes">@p.CantidadMeGusta</span></span>
+                        <span>💬 <span class="miniatura-comentarios">@p.Comentarios.Count</span></span>
+                    </span>
+                </button>
+            }
+        </div>
+
+        <div class="ver-mas ver-mas-perfil">
+            <button type="button" id="btnVerMasPerfil" class="btn btn-secundario btn-bloque"
+                    data-desde="@publicaciones.Count" data-id-autor="@Model.Id" data-cantidad="@ViewBag.CantidadPorPagina"
+                    hidden="@(!(bool)ViewBag.HayMas)">
+                Ver más
+            </button>
+            <p id="finPerfil" class="fin-feed" hidden="@((bool)ViewBag.HayMas || publicaciones.Count == 0)">No hay más publicaciones</p>
+        </div>
+    </section>
+</div>
+
+@* Modal donde se abre la publicación completa al hacer click en una miniatura *@
+<dialog id="modalPublicacion" class="modal-publicacion" aria-label="Publicación">
+    <button type="button" class="modal-cerrar" aria-label="Cerrar">✕</button>
+    <div class="modal-contenido" id="modalContenido"></div>
+</dialog>

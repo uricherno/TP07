@@ -7,6 +7,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Conecta</title>
+
+    @* Aplica el tema guardado ANTES de pintar la página, así no parpadea en claro al recargar en modo oscuro *@
+    <script>
+        (function () {
+            let tema = null;
+            try { tema = localStorage.getItem('tema'); } catch { }
+            if (!tema) tema = matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+            document.documentElement.dataset.tema = tema;
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Pacifico&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -18,17 +29,33 @@
                 <span class="logo-icono">◎</span> Conecta
             </a>
 
+            @if (nombreUsuario != null)
+            {
+                @* Buscador: consulta al servidor con Fetch mientras se escribe *@
+                <div class="buscador" id="buscador">
+                    <span class="buscador-icono" aria-hidden="true">🔍</span>
+                    <input type="search" id="inputBuscar" placeholder="Buscar personas o publicaciones"
+                           autocomplete="off" aria-label="Buscar" aria-controls="resultadosBusqueda" maxlength="50" />
+                    <div class="buscador-resultados" id="resultadosBusqueda" role="listbox" hidden></div>
+                </div>
+            }
+
             <nav class="navbar-links">
+                <button type="button" class="btn-tema" id="btnTema" aria-label="Cambiar tema" title="Cambiar tema">
+                    <span class="tema-icono-claro" aria-hidden="true">🌙</span>
+                    <span class="tema-icono-oscuro" aria-hidden="true">☀️</span>
+                </button>
+
                 @if (nombreUsuario != null)
                 {
                     <a class="btn btn-primario btn-chico" asp-controller="Publicacion" asp-action="Crear">
                         <span aria-hidden="true">＋</span> <span class="ocultar-mobile">Nueva publicación</span>
                     </a>
-                    <span class="navbar-usuario">
+                    <a class="navbar-usuario" href="/Perfil" title="Mi perfil">
                         <span class="avatar avatar-chico">@nombreUsuario.Substring(0, 1).ToUpper()</span>
                         <span class="ocultar-mobile">@nombreUsuario</span>
-                    </span>
-                    <a class="link-suave" asp-controller="Account" asp-action="Logout">Cerrar sesión</a>
+                    </a>
+                    <a class="link-suave" asp-controller="Account" asp-action="Logout">Salir</a>
                 }
                 else
                 {
@@ -42,6 +69,33 @@
     <main class="contenedor">
         @RenderBody()
     </main>
+
+    @* ---------- Elementos compartidos por todas las páginas (los usa site.js) ---------- *@
+
+    @* Confirmación propia (reemplaza a confirm()) *@
+    <dialog id="dialogoConfirmar" class="dialogo" aria-labelledby="confirmarTitulo">
+        @* method="dialog" solo cierra el diálogo (no envía nada al servidor), por eso no lleva token *@
+        <form method="dialog" class="dialogo-contenido" asp-antiforgery="false">
+            <h2 id="confirmarTitulo" class="dialogo-titulo"></h2>
+            <p id="confirmarMensaje" class="dialogo-mensaje"></p>
+            <div class="dialogo-botones">
+                <button type="submit" value="no" class="btn btn-secundario">Cancelar</button>
+                <button type="submit" value="si" class="btn btn-peligro" id="confirmarAceptar">Eliminar</button>
+            </div>
+        </form>
+    </dialog>
+
+    @* Lista de quiénes dieron Me Gusta *@
+    <dialog id="dialogoLikes" class="dialogo dialogo-likes" aria-labelledby="likesTitulo">
+        <div class="dialogo-encabezado">
+            <h2 id="likesTitulo" class="dialogo-titulo">Me gusta</h2>
+            <button type="button" class="dialogo-cerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <ul class="lista-likes" id="listaLikes"></ul>
+    </dialog>
+
+    @* Mensajes flotantes (toasts) *@
+    <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

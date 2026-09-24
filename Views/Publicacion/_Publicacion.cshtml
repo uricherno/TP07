@@ -4,20 +4,34 @@
     const string corazon = "M12 20.7s-7.2-4.4-9.3-8.6C1.1 8.9 2.7 5 6.3 4.4c2.1-.4 4 .6 5.7 2.6 1.7-2 3.6-3 5.7-2.6 3.6.6 5.2 4.5 3.6 7.7-2.1 4.2-9.3 8.6-9.3 8.6z";
     const string globo = "M20.7 16.9A9.5 9.5 0 1 0 17 20.5L21.5 21.5z";
     int cantComentarios = Model.Comentarios.Count;
+    int? idUsuarioLogueado = Context.Session.GetInt32("IdUsuario");
+    bool esMia = Model.IdUsuario == idUsuarioLogueado;
 }
 
 <article class="post" data-id="@Model.Id">
     <header class="post-header">
-        <span class="avatar">@Model.NombreUsuario.Substring(0, 1).ToUpper()</span>
-        <div>
-            <span class="post-usuario">@Model.NombreUsuario</span>
+        <a class="avatar" href="/Perfil/@Model.NombreUsuario" aria-hidden="true" tabindex="-1">@Model.NombreUsuario.Substring(0, 1).ToUpper()</a>
+        <div class="post-autor">
+            <a class="post-usuario" href="/Perfil/@Model.NombreUsuario">@Model.NombreUsuario</a>
             <time class="post-fecha">@Model.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</time>
         </div>
+
+        @* Menú ⋯ solo en las publicaciones propias *@
+        @if (esMia)
+        {
+            <details class="menu-post">
+                <summary aria-label="Opciones de la publicación" title="Opciones">⋯</summary>
+                <div class="menu-post-opciones">
+                    <a href="/Publicacion/Editar/@Model.Id">✏️ Editar</a>
+                    <button type="button" class="btn-eliminar-publicacion">🗑️ Eliminar</button>
+                </div>
+            </details>
+        }
     </header>
 
     @* Doble click (o doble toque en el celular) sobre la imagen = Me Gusta, como en Instagram *@
     <div class="post-media" title="Doble click para dar Me Gusta">
-        <img class="post-imagen" src="~/img/publicaciones/@Model.Imagen" alt="@Model.Titulo" loading="lazy"
+        <img class="post-imagen" src="@Imagenes.Url(Model)" alt="@Model.Titulo" loading="lazy"
              onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
         <svg class="corazon-grande" viewBox="0 0 24 24" aria-hidden="true"><path d="@corazon" /></svg>
     </div>
@@ -36,7 +50,10 @@
         </div>
 
         <p class="post-stats">
-            <strong><span class="contador-likes">@Model.CantidadMeGusta</span> Me gusta</strong>
+            @* Click en "N Me gusta" → lista de quiénes dieron Me Gusta *@
+            <button type="button" class="btn-ver-likes" title="Ver quiénes dieron Me Gusta">
+                <span class="contador-likes">@Model.CantidadMeGusta</span> Me gusta
+            </button>
             ·
             <span class="contador-comentarios"><span>@cantComentarios</span> <span class="palabra-comentarios">@(cantComentarios == 1 ? "comentario" : "comentarios")</span></span>
         </p>
@@ -47,16 +64,23 @@
         <ul class="comentarios">
             @foreach (var c in Model.Comentarios)
             {
-                <li class="comentario">
-                    <span class="comentario-usuario">@c.NombreUsuario</span>
-                    <span class="comentario-texto">@c.Texto</span>
-                    <time class="comentario-fecha">@c.FechaComentario.ToString("dd/MM/yyyy HH:mm")</time>
+                <li class="comentario" data-id="@c.Id">
+                    <div class="comentario-cuerpo">
+                        <a class="comentario-usuario" href="/Perfil/@c.NombreUsuario">@c.NombreUsuario</a>
+                        <span class="comentario-texto">@c.Texto</span>
+                        <time class="comentario-fecha">@c.FechaComentario.ToString("dd/MM/yyyy HH:mm")</time>
+                    </div>
+                    @if (c.IdUsuarioComenta == idUsuarioLogueado)
+                    {
+                        <button type="button" class="btn-eliminar-comentario" aria-label="Eliminar comentario" title="Eliminar comentario">✕</button>
+                    }
                 </li>
             }
         </ul>
 
         <form class="form-comentario" autocomplete="off">
             <input type="text" name="texto" placeholder="Agregá un comentario..." maxlength="500" />
+            <span class="contador-caracteres contador-comentario" hidden></span>
             <button type="submit" disabled>Comentar</button>
         </form>
         <p class="error-comentario" hidden></p>

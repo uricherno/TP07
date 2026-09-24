@@ -1,30 +1,90 @@
 @model List<Publicacion>
 @{
     ViewData["Title"] = "Inicio";
+    var miPerfil = ViewBag.MiPerfil as Perfil;
+    var sugeridos = (List<Perfil>)ViewBag.Sugeridos;
+    string orden = ViewBag.Orden;
 }
 
 @* Token antifalsificación que JavaScript manda en el header de cada POST con Fetch *@
 @Html.AntiForgeryToken()
 
-<section class="feed" id="feed">
-    @if (Model.Count == 0)
-    {
-        <div class="feed-vacio">
-            <p>Todavía no hay publicaciones.</p>
-            <a class="btn btn-primario" asp-action="Crear">Creá la primera</a>
+<div class="inicio">
+    <div class="inicio-feed">
+        @* Orden del feed: cambia el ORDER BY de la consulta *@
+        <nav class="orden-feed" aria-label="Ordenar publicaciones">
+            <a class="@(orden == "recientes" ? "activo" : "")" href="/Publicacion?orden=recientes"
+               aria-current="@(orden == "recientes" ? "page" : null)">🕒 Más recientes</a>
+            <a class="@(orden == "gustadas" ? "activo" : "")" href="/Publicacion?orden=gustadas"
+               aria-current="@(orden == "gustadas" ? "page" : null)">❤ Más gustadas</a>
+        </nav>
+
+        <section class="feed" id="feed">
+            @if (Model.Count == 0)
+            {
+                <div class="feed-vacio">
+                    <p>Todavía no hay publicaciones.</p>
+                    <a class="btn btn-primario" asp-action="Crear">Creá la primera</a>
+                </div>
+            }
+
+            @foreach (var p in Model)
+            {
+                <partial name="_Publicacion" model="p" />
+            }
+        </section>
+
+        <div class="ver-mas">
+            <button type="button" id="btnVerMas" class="btn btn-secundario btn-bloque"
+                    data-desde="@Model.Count" data-orden="@orden" hidden="@(!(bool)ViewBag.HayMas)">
+                Ver más
+            </button>
+            <p id="finFeed" class="fin-feed" hidden="@((bool)ViewBag.HayMas || Model.Count == 0)">No hay más publicaciones</p>
         </div>
-    }
+    </div>
 
-    @foreach (var p in Model)
-    {
-        <partial name="_Publicacion" model="p" />
-    }
-</section>
+    @* Barra lateral (solo en pantallas anchas): mi perfil y otros usuarios *@
+    <aside class="barra-lateral">
+        @if (miPerfil != null)
+        {
+            <div class="tarjeta-lateral tarjeta-yo">
+                <a class="avatar avatar-mediano" href="/Perfil" aria-hidden="true" tabindex="-1">@miPerfil.NombreUsuario.Substring(0, 1).ToUpper()</a>
+                <div class="lateral-texto">
+                    <a class="lateral-usuario" href="/Perfil">@miPerfil.NombreUsuario</a>
+                    <span class="lateral-sub">@miPerfil.Nombre @miPerfil.Apellido</span>
+                </div>
+                <a class="lateral-link" href="/Perfil">Ver perfil</a>
+            </div>
 
-<div class="ver-mas">
-    <button type="button" id="btnVerMas" class="btn btn-secundario btn-bloque"
-            data-desde="@Model.Count" hidden="@(!(bool)ViewBag.HayMas)">
-        Ver más
-    </button>
-    <p id="finFeed" class="fin-feed" hidden="@((bool)ViewBag.HayMas || Model.Count == 0)">No hay más publicaciones</p>
+            <ul class="lateral-stats">
+                <li><strong>@miPerfil.CantidadPublicaciones</strong><span>publicaciones</span></li>
+                <li><strong>@miPerfil.CantidadMeGustaRecibidos</strong><span>me gusta</span></li>
+                <li><strong>@miPerfil.CantidadComentariosRecibidos</strong><span>comentarios</span></li>
+            </ul>
+        }
+
+        @if (sugeridos.Count > 0)
+        {
+            <div class="tarjeta-lateral-lista">
+                <h2 class="lateral-titulo">Personas en Conecta</h2>
+                <ul class="lista-sugeridos">
+                    @foreach (var u in sugeridos)
+                    {
+                        <li>
+                            <a class="avatar avatar-chico" href="/Perfil/@u.NombreUsuario" aria-hidden="true" tabindex="-1">@u.NombreUsuario.Substring(0, 1).ToUpper()</a>
+                            <div class="lateral-texto">
+                                <a class="lateral-usuario" href="/Perfil/@u.NombreUsuario">@u.NombreUsuario</a>
+                                <span class="lateral-sub">@u.CantidadPublicaciones @(u.CantidadPublicaciones == 1 ? "publicación" : "publicaciones")</span>
+                            </div>
+                            <a class="lateral-link" href="/Perfil/@u.NombreUsuario">Ver</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <a class="btn btn-primario btn-bloque" asp-action="Crear">＋ Nueva publicación</a>
+
+        <p class="lateral-pie">© @DateTime.Now.Year Conecta · TP07</p>
+    </aside>
 </div>

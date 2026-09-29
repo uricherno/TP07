@@ -13,11 +13,15 @@ public class PublicacionController : Controller
     private const int MaximoComentario = 500;
     private const int SegundosEntreComentarios = 5;
     private const long TamanoMaximoImagen = 5 * 1024 * 1024; // 5 MB
-    private static readonly string[] ExtensionesPermitidas = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+    private const long TamanoMaximoVideo = 50 * 1024 * 1024; // 50 MB
+    // Límite del pedido completo (Kestrel corta en 30 MB por defecto). Tiene margen sobre el máximo del video
+    // para que un archivo apenas más grande llegue a GuardarImagen y reciba el mensaje de error prolijo.
+    private const long TamanoMaximoPedido = TamanoMaximoVideo + 10 * 1024 * 1024;
+    private static readonly string[] ExtensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
-    // Nombre que les pone la app a las imágenes subidas: Guid sin guiones (32) + extensión.
-    // Solo esas se borran del disco; las de ejemplo y las predeterminadas nunca se tocan.
-    private static readonly Regex NombreImagenSubida = new(@"^[0-9a-f]{32}\.(jpg|jpeg|png|gif|webp)$");
+    // Nombre que les pone la app a los archivos subidos: Guid sin guiones (32) + extensión.
+    // Solo esos se borran del disco; los de ejemplo y los predeterminados nunca se tocan.
+    private static readonly Regex NombreImagenSubida = new(@"^[0-9a-f]{32}\.(jpg|jpeg|png|gif|webp|mp4|webm|mov)$");
 
     private readonly IWebHostEnvironment _env;
 
@@ -61,6 +65,8 @@ public class PublicacionController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(TamanoMaximoPedido)]
+    [RequestFormLimits(MultipartBodyLengthLimit = TamanoMaximoPedido)]
     public async Task<IActionResult> Crear(string titulo, string descripcion, IFormFile? imagen)
     {
         int? idUsuario = IdUsuarioLogueado();
@@ -71,7 +77,7 @@ public class PublicacionController : Controller
 
         string? error = ValidarTextos(titulo, descripcion);
         if (error == null && (imagen == null || imagen.Length == 0))
-            error = "Tenés que seleccionar una imagen.";
+            error = "Tenés que seleccionar una imagen o un video.";
         if (error != null)
         {
             ViewBag.Error = error;
@@ -114,6 +120,8 @@ public class PublicacionController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(TamanoMaximoPedido)]
+    [RequestFormLimits(MultipartBodyLengthLimit = TamanoMaximoPedido)]
     public async Task<IActionResult> Editar(int id, string titulo, string descripcion, IFormFile? imagen)
     {
         int? idUsuario = IdUsuarioLogueado();
@@ -133,7 +141,7 @@ public class PublicacionController : Controller
             return View(p);
         }
 
-        // La imagen es opcional al editar: si no se elige una nueva, queda la actual
+        // La imagen o el video es opcional al editar: si no se elige uno nuevo, queda el actual
         string? nombreArchivo = null;
         if (imagen != null && imagen.Length > 0)
         {
@@ -324,12 +332,17 @@ public class PublicacionController : Controller
             nombreCompleto = (u.Nombre + " " + u.Apellido).Trim(),
             cantidadPublicaciones = u.CantidadPublicaciones
         });
-        var publicaciones = BD.BuscarPublicaciones(q, 5).Select(p => new
+        var publicaciones = BD.BuscarPublicaciones(q, 5).Select(p =>
         {
-            id = p.Id,
-            titulo = p.Titulo,
-            nombreUsuario = p.NombreUsuario,
-            imagen = Imagenes.Url(p)
+            string url = Imagenes.Url(p);
+            return new
+            {
+                id = p.Id,
+                titulo = p.Titulo,
+                nombreUsuario = p.NombreUsuario,
+                imagen = url,
+                esVideo = Imagenes.EsVideo(url)
+            };
         });
         return Json(new { ok = true, usuarios, publicaciones });
     }
@@ -347,13 +360,16 @@ public class PublicacionController : Controller
         return null;
     }
 
-    // Valida y guarda la imagen en wwwroot/img/publicaciones con un nombre único
+    // Valida y guarda la imagen o el video en wwwroot/img/publicaciones con un nombre único
     private async Task<(string? nombre, string? error)> GuardarImagen(IFormFile imagen)
     {
         string extension = Path.GetExtension(imagen.FileName).ToLowerInvariant();
-        if (!ExtensionesPermitidas.Contains(extension))
-            return (null, "Formato de imagen no permitido (jpg, png, gif o webp).");
-        if (imagen.Length > TamanoMaximoImagen)
+        bool esVideo = Imagenes.ExtensionesVideo.Contains(extension);
+        if (!esVideo && !ExtensionesImagen.Contains(extension))
+            return (null, "Formato no permitido (imágenes jpg, png, gif o webp; videos mp4, webm o mov).");
+        if (esVideo && imagen.Length > TamanoMaximoVideo)
+            return (null, "El video no puede pesar más de 50 MB.");
+        if (!esVideo && imagen.Length > TamanoMaximoImagen)
             return (null, "La imagen no puede pesar más de 5 MB.");
 
         // Nombre único: Guid (32) + extensión → entra en Publicaciones.Imagen varchar(50)
@@ -389,20 +405,25 @@ public class PublicacionController : Controller
         return View("NoEncontrado", "La publicación que buscás no existe o no es tuya.");
     }
 
-    private static object PublicacionDto(Publicacion p, int idUsuario) => new
+    private static object PublicacionDto(Publicacion p, int idUsuario)
     {
-        id = p.Id,
-        idUsuario = p.IdUsuario,
-        nombreUsuario = p.NombreUsuario,
-        titulo = p.Titulo,
-        descripcion = p.Descripcion,
-        imagen = Imagenes.Url(p),
-        fecha = p.FechaPublicacion.ToString("dd/MM/yyyy HH:mm"),
-        cantidadMeGusta = p.CantidadMeGusta,
-        usuarioDioMeGusta = p.UsuarioDioMeGusta,
-        esMia = p.IdUsuario == idUsuario,
-        comentarios = p.Comentarios.Select(c => ComentarioDto(c, idUsuario))
-    };
+        string url = Imagenes.Url(p);
+        return new
+        {
+            id = p.Id,
+            idUsuario = p.IdUsuario,
+            nombreUsuario = p.NombreUsuario,
+            titulo = p.Titulo,
+            descripcion = p.Descripcion,
+            imagen = url,
+            esVideo = Imagenes.EsVideo(url),
+            fecha = p.FechaPublicacion.ToString("dd/MM/yyyy HH:mm"),
+            cantidadMeGusta = p.CantidadMeGusta,
+            usuarioDioMeGusta = p.UsuarioDioMeGusta,
+            esMia = p.IdUsuario == idUsuario,
+            comentarios = p.Comentarios.Select(c => ComentarioDto(c, idUsuario))
+        };
+    }
 
     private static object ComentarioDto(Comentario c, int idUsuario) => new
     {

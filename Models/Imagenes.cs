@@ -8,6 +8,12 @@ public static class Imagenes
 
     private const int CantidadGenericas = 4;
 
+    public static readonly string[] ExtensionesVideo = { ".mp4", ".webm", ".mov" };
+
+    // Según la extensión de la URL ya resuelta (si el video no existe, Url devuelve una ilustración .svg)
+    public static bool EsVideo(string url) =>
+        ExtensionesVideo.Contains(Path.GetExtension(url).ToLowerInvariant());
+
     public static string Url(Publicacion p)
     {
         if (!string.IsNullOrWhiteSpace(p.Imagen) &&

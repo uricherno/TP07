@@ -4,6 +4,8 @@
     bool editando = Model != null;
     string titulo = ViewBag.Titulo ?? "";
     string descripcion = ViewBag.Descripcion ?? "";
+    string? urlActual = editando ? Imagenes.Url(Model!) : null;
+    bool actualEsVideo = urlActual != null && Imagenes.EsVideo(urlActual);
 }
 
 @if (ViewBag.Error != null)
@@ -13,21 +15,23 @@
 
 <form asp-controller="Publicacion" asp-action="@(editando ? "Editar" : "Crear")" asp-route-id="@Model?.Id"
       method="post" enctype="multipart/form-data" class="formulario" id="formPublicacion">
-    @* Se puede hacer click o arrastrar una imagen encima *@
+    @* Se puede hacer click o arrastrar una imagen o un video encima *@
     <label for="imagen" class="zona-imagen" id="zonaImagen">
         <img id="previewImagen" alt="Vista previa"
-             src="@(editando ? Imagenes.Url(Model!) : null)" hidden="@(!editando)" />
+             src="@(actualEsVideo ? null : urlActual)" hidden="@(!editando || actualEsVideo)" />
+        <video id="previewVideo" muted loop playsinline autoplay
+               src="@(actualEsVideo ? urlActual : null)" hidden="@(!actualEsVideo)"></video>
         <span id="textoZonaImagen" hidden="@editando">
             <span class="zona-imagen-icono">🖼️</span>
-            Hacé click o arrastrá una imagen acá<br />
-            <small>JPG, PNG, GIF o WEBP · máx. 5 MB</small>
+            Hacé click o arrastrá una imagen o un video acá<br />
+            <small>JPG, PNG, GIF o WEBP · máx. 5 MB<br />MP4, WEBM o MOV · máx. 50 MB</small>
         </span>
     </label>
     <p class="info-imagen" id="infoImagen" aria-live="polite">
-        @(editando ? "Dejala como está o elegí otra para reemplazarla." : "")
+        @(editando ? "Dejalo como está o elegí otro archivo para reemplazarlo." : "")
     </p>
-    <input id="imagen" name="imagen" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" class="input-oculto"
-           required="@(!editando)" />
+    <input id="imagen" name="imagen" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov"
+           class="input-oculto" required="@(!editando)" />
 
     <div class="label-con-contador">
         <label for="titulo">Título</label>

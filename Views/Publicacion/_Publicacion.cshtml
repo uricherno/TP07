@@ -3,9 +3,14 @@
     // Íconos SVG (mismos que usa site.js al armar las publicaciones de "Ver más")
     const string corazon = "M12 20.7s-7.2-4.4-9.3-8.6C1.1 8.9 2.7 5 6.3 4.4c2.1-.4 4 .6 5.7 2.6 1.7-2 3.6-3 5.7-2.6 3.6.6 5.2 4.5 3.6 7.7-2.1 4.2-9.3 8.6-9.3 8.6z";
     const string globo = "M20.7 16.9A9.5 9.5 0 1 0 17 20.5L21.5 21.5z";
+    const string parlante = "M4 9.5h3.5L12 6v12l-4.5-3.5H4z";
+    const string cruz = "M16 9.5l5 5M21 9.5l-5 5";
+    const string ondas = "M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.3a8 8 0 0 1 0 11.4";
     int cantComentarios = Model.Comentarios.Count;
     int? idUsuarioLogueado = Context.Session.GetInt32("IdUsuario");
     bool esMia = Model.IdUsuario == idUsuarioLogueado;
+    string urlMedia = Imagenes.Url(Model);
+    bool esVideo = Imagenes.EsVideo(urlMedia);
 }
 
 <article class="post" data-id="@Model.Id">
@@ -29,10 +34,24 @@
         }
     </header>
 
-    @* Doble click (o doble toque en el celular) sobre la imagen = Me Gusta, como en Instagram *@
+    @* Doble click (o doble toque en el celular) sobre la imagen = Me Gusta, como en Instagram.
+       Los videos se reproducen solos y sin sonido cuando están en pantalla; un click los pausa. *@
     <div class="post-media" title="Doble click para dar Me Gusta">
-        <img class="post-imagen" src="@Imagenes.Url(Model)" alt="@Model.Titulo" loading="lazy"
-             onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+        @if (esVideo)
+        {
+            <video class="post-imagen post-video" src="@urlMedia" muted loop playsinline preload="metadata"
+                   aria-label="@Model.Titulo"></video>
+            <button type="button" class="btn-sonido" aria-label="Activar sonido" title="Activar sonido">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="@parlante" /><path class="cruz" d="@cruz" /><path class="ondas" d="@ondas" />
+                </svg>
+            </button>
+        }
+        else
+        {
+            <img class="post-imagen" src="@urlMedia" alt="@Model.Titulo" loading="lazy"
+                 onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+        }
         <svg class="corazon-grande" viewBox="0 0 24 24" aria-hidden="true"><path d="@corazon" /></svg>
     </div>
 

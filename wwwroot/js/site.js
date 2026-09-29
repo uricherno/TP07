@@ -8,6 +8,9 @@ let modal, modalContenido, miniaturaAbierta, grillaPerfil, btnVerMasPerfil;
 // Íconos SVG (mismos que usa Views/Publicacion/_Publicacion.cshtml)
 const PATH_CORAZON = 'M12 20.7s-7.2-4.4-9.3-8.6C1.1 8.9 2.7 5 6.3 4.4c2.1-.4 4 .6 5.7 2.6 1.7-2 3.6-3 5.7-2.6 3.6.6 5.2 4.5 3.6 7.7-2.1 4.2-9.3 8.6-9.3 8.6z';
 const PATH_GLOBO = 'M20.7 16.9A9.5 9.5 0 1 0 17 20.5L21.5 21.5z';
+const PATH_PARLANTE = 'M4 9.5h3.5L12 6v12l-4.5-3.5H4z';
+const PATH_CRUZ = 'M16 9.5l5 5M21 9.5l-5 5';
+const PATH_ONDAS = 'M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.3a8 8 0 0 1 0 11.4';
 
 const MAXIMO_COMENTARIO = 500;
 const PREFIJO_BORRADOR = 'borrador-comentario-';
@@ -154,13 +157,15 @@ function actualizarContadorComentario(form) {
 }
 
 // ==========================================================
-// Crear / Editar publicación: imagen por click o arrastrando, con compresión en el navegador
+// Crear / Editar publicación: imagen o video por click o arrastrando, con compresión de imágenes en el navegador
 // ==========================================================
 
 const LADO_MAXIMO_IMAGEN = 1600;   // px del lado más largo después de comprimir
 const CALIDAD_JPEG = 0.82;
 const TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024;
+const TAMANO_MAXIMO_VIDEO = 50 * 1024 * 1024;
 const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const TIPOS_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 function formatearTamano(bytes) {
     if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
@@ -223,11 +228,14 @@ function iniciarFormularioPublicacion() {
     const input = document.getElementById('imagen');
     const zona = document.getElementById('zonaImagen');
     const preview = document.getElementById('previewImagen');
+    const previewVideo = document.getElementById('previewVideo');
     const texto = document.getElementById('textoZonaImagen');
     const info = document.getElementById('infoImagen');
     const btnPublicar = document.getElementById('btnPublicar');
 
-    const srcOriginal = preview.getAttribute('src'); // al editar: la imagen actual
+    // Al editar: la imagen o el video actual
+    const srcOriginal = preview.getAttribute('src');
+    const srcVideoOriginal = previewVideo.getAttribute('src');
     const infoOriginal = info.textContent;
     let procesando = false;
 
@@ -236,16 +244,24 @@ function iniciarFormularioPublicacion() {
         info.classList.toggle('error', esError);
     };
 
+    // Muestra en la zona la imagen, el video o (si no hay ninguno) el texto de ayuda
+    const mostrarPreview = (srcImagen, srcVideo) => {
+        if (preview.src.startsWith('blob:')) URL.revokeObjectURL(preview.src);
+        if (previewVideo.src.startsWith('blob:')) URL.revokeObjectURL(previewVideo.src);
+
+        if (srcImagen) preview.src = srcImagen;
+        else preview.removeAttribute('src');
+        if (srcVideo) previewVideo.src = srcVideo;
+        else previewVideo.removeAttribute('src');
+
+        preview.hidden = !srcImagen;
+        previewVideo.hidden = !srcVideo;
+        texto.hidden = !!(srcImagen || srcVideo);
+    };
+
     const volverAlInicio = () => {
         input.value = '';
-        if (srcOriginal) {
-            preview.src = srcOriginal;
-            preview.hidden = false;
-            texto.hidden = true;
-        } else {
-            preview.hidden = true;
-            texto.hidden = false;
-        }
+        mostrarPreview(srcOriginal, srcVideoOriginal);
     };
 
     async function procesarArchivo(archivo) {
@@ -254,16 +270,29 @@ function iniciarFormularioPublicacion() {
             mostrarInfo(infoOriginal);
             return;
         }
+
+        // Los videos no se comprimen en el navegador: solo se controla el peso
+        // (algunos sistemas no informan el tipo de los .mov, por eso también se mira la extensión)
+        if (TIPOS_VIDEO.includes(archivo.type) || /\.(mp4|webm|mov)$/i.test(archivo.name)) {
+            if (archivo.size > TAMANO_MAXIMO_VIDEO) {
+                volverAlInicio();
+                mostrarInfo('El video pesa ' + formatearTamano(archivo.size) + ' y el máximo es 50 MB.', true);
+                return;
+            }
+            mostrarPreview(null, URL.createObjectURL(archivo));
+            ponerArchivoEnInput(input, archivo);
+            mostrarInfo('Video listo · ' + formatearTamano(archivo.size));
+            return;
+        }
+
         if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
             volverAlInicio();
-            mostrarInfo('Formato no permitido. Usá JPG, PNG, GIF o WEBP.', true);
+            mostrarInfo('Formato no permitido. Usá JPG, PNG, GIF, WEBP, MP4, WEBM o MOV.', true);
             return;
         }
 
         // Vista previa inmediata con el archivo original
-        preview.src = URL.createObjectURL(archivo);
-        preview.hidden = false;
-        texto.hidden = true;
+        mostrarPreview(URL.createObjectURL(archivo), null);
 
         procesando = true;
         btnPublicar.disabled = true;
@@ -362,8 +391,78 @@ function iniciarFeed() {
 
     conectarEventosPublicacion(feed);
     restaurarBorradores(feed);
+    feed.querySelectorAll('.post-video').forEach(v => {
+        ajustarProporcion(v); // por si ya había cargado antes que este script
+        observarVideo(v);
+    });
     btnVerMas.addEventListener('click', verMas);
 }
+
+// ==========================================================
+// Videos: se reproducen solos (sin sonido) mientras se ven en pantalla, como en Instagram
+// ==========================================================
+
+let observadorVideos = null;
+
+function observarVideo(video) {
+    if (!('IntersectionObserver' in window)) return;
+    observadorVideos ??= new IntersectionObserver(entradas => {
+        entradas.forEach(e => {
+            // "pausadoPorUsuario": si lo pausó con un click, no se vuelve a reproducir solo
+            if (e.isIntersecting && !e.target.dataset.pausadoPorUsuario) e.target.play().catch(() => { });
+            else if (!e.isIntersecting) e.target.pause();
+        });
+    }, { threshold: 0.6 });
+    observadorVideos.observe(video);
+}
+
+function dejarDeObservarVideos(contenedor) {
+    contenedor.querySelectorAll('.post-video').forEach(v => {
+        v.pause();
+        observadorVideos?.unobserve(v);
+    });
+}
+
+function alternarReproduccion(video) {
+    if (video.paused) {
+        delete video.dataset.pausadoPorUsuario;
+        video.play().catch(() => { });
+    } else {
+        video.dataset.pausadoPorUsuario = '1';
+        video.pause();
+    }
+}
+
+function alternarSonido(boton) {
+    const video = boton.closest('.post-media').querySelector('.post-video');
+    video.muted = !video.muted;
+    const texto = video.muted ? 'Activar sonido' : 'Silenciar';
+    boton.classList.toggle('activo', !video.muted); // el CSS cambia la cruz por las ondas
+    boton.title = texto;
+    boton.setAttribute('aria-label', texto);
+}
+
+// Mismo ícono que Views/Publicacion/_Publicacion.cshtml: parlante + cruz (sin sonido) + ondas (con sonido)
+function crearIconoSonido() {
+    const svg = crearIcono('', PATH_PARLANTE);
+    svg.removeAttribute('class');
+    [['cruz', PATH_CRUZ], ['ondas', PATH_ONDAS]].forEach(([clase, d]) => {
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('class', clase);
+        p.setAttribute('d', d);
+        svg.appendChild(p);
+    });
+    return svg;
+}
+
+// Cuando se conoce el tamaño de un video, se muestra con su proporción real (entre 4:5 y 16:9) en vez de recortarlo.
+// "loadedmetadata" no burbujea: se escucha en la fase de captura, así sirve para todos los videos, también los que se agregan después.
+function ajustarProporcion(video) {
+    if (!video.classList?.contains('post-video') || !video.videoWidth || !video.videoHeight) return;
+    const proporcion = Math.min(16 / 9, Math.max(4 / 5, video.videoWidth / video.videoHeight));
+    video.style.aspectRatio = String(proporcion);
+}
+document.addEventListener('loadedmetadata', e => ajustarProporcion(e.target), true);
 
 // Eventos delegados en el contenedor: funcionan también en las publicaciones agregadas después
 // (por "Ver más" en el feed o dentro del modal del perfil)
@@ -405,10 +504,21 @@ function conectarEventosPublicacion(contenedor) {
             return;
         }
 
+        // Botón de sonido de un video
+        const btnSonido = e.target.closest('.btn-sonido');
+        if (btnSonido) {
+            alternarSonido(btnSonido);
+            return;
+        }
+
         // Doble click / doble toque sobre la imagen: solo DA Me Gusta (nunca lo quita), como en Instagram.
         // Se detecta con dos clicks seguidos en menos de 300 ms, así funciona igual en PC y en celular.
         const media = e.target.closest('.post-media');
         if (media) {
+            // En un video, cada click pausa o reanuda: con el doble click se pausa y se reanuda, y queda igual
+            const video = media.querySelector('.post-video');
+            if (video) alternarReproduccion(video);
+
             const ahora = Date.now();
             if (ultimoToque.media === media && ahora - ultimoToque.tiempo < 300) {
                 mostrarCorazonGrande(media);
@@ -733,6 +843,7 @@ async function eliminarPublicacion(post) {
         } else {
             // Feed: se anima la salida y se corrige el "desde" para que Ver más no saltee una publicación
             post.classList.add('saliendo');
+            dejarDeObservarVideos(post);
             setTimeout(() => post.remove(), 300);
             if (btnVerMas) btnVerMas.dataset.desde = Math.max(0, Number(btnVerMas.dataset.desde) - 1);
         }
@@ -784,15 +895,33 @@ function crearPublicacionElement(p) {
         header.appendChild(menu);
     }
 
-    // Imagen (con el corazón grande del doble click)
+    // Imagen o video (con el corazón grande del doble click)
     const media = crear('div', 'post-media');
     media.title = 'Doble click para dar Me Gusta';
-    const img = crear('img', 'post-imagen');
-    img.src = p.imagen;
-    img.alt = p.titulo;
-    img.loading = 'lazy';
-    img.onerror = () => { img.onerror = null; img.src = '/img/placeholder.svg'; };
-    media.append(img, crearIcono('corazon-grande', PATH_CORAZON));
+    if (p.esVideo) {
+        const video = crear('video', 'post-imagen post-video');
+        video.src = p.imagen;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.setAttribute('aria-label', p.titulo);
+        const btnSonido = crear('button', 'btn-sonido');
+        btnSonido.type = 'button';
+        btnSonido.appendChild(crearIconoSonido());
+        btnSonido.title = 'Activar sonido';
+        btnSonido.setAttribute('aria-label', 'Activar sonido');
+        media.append(video, btnSonido);
+        observarVideo(video);
+    } else {
+        const img = crear('img', 'post-imagen');
+        img.src = p.imagen;
+        img.alt = p.titulo;
+        img.loading = 'lazy';
+        img.onerror = () => { img.onerror = null; img.src = '/img/placeholder.svg'; };
+        media.appendChild(img);
+    }
+    media.appendChild(crearIcono('corazon-grande', PATH_CORAZON));
 
     // Cuerpo
     const cuerpo = crear('div', 'post-cuerpo');
@@ -938,6 +1067,7 @@ function iniciarPerfil() {
             miniaturaAbierta.querySelector('.miniatura-comentarios').textContent =
                 post.querySelector('.contador-comentarios span').textContent;
         }
+        dejarDeObservarVideos(modalContenido);
         modalContenido.replaceChildren();
         miniaturaAbierta = null;
         if (location.hash) history.replaceState(null, '', location.pathname + location.search);
@@ -970,12 +1100,6 @@ function crearMiniaturaElement(p) {
     boton.dataset.id = p.id;
     boton.setAttribute('aria-label', 'Ver publicación: ' + p.titulo);
 
-    const img = crear('img');
-    img.src = p.imagen;
-    img.alt = p.titulo;
-    img.loading = 'lazy';
-    img.onerror = () => { img.onerror = null; img.src = '/img/placeholder.svg'; };
-
     const overlay = crear('span', 'miniatura-overlay');
     const likes = crear('span', '', '❤ ');
     likes.appendChild(crear('span', 'miniatura-likes', p.cantidadMeGusta));
@@ -983,8 +1107,28 @@ function crearMiniaturaElement(p) {
     comentarios.appendChild(crear('span', 'miniatura-comentarios', p.comentarios.length));
     overlay.append(likes, comentarios);
 
-    boton.append(img, overlay);
+    if (p.esVideo) {
+        boton.append(crearMiniaturaVideo(p.imagen), crear('span', 'miniatura-video', '▶'), overlay);
+    } else {
+        const img = crear('img');
+        img.src = p.imagen;
+        img.alt = p.titulo;
+        img.loading = 'lazy';
+        img.onerror = () => { img.onerror = null; img.src = '/img/placeholder.svg'; };
+        boton.append(img, overlay);
+    }
     return boton;
+}
+
+// Video quieto que muestra su primer cuadro (#t=0.1), para miniaturas
+function crearMiniaturaVideo(src, clase) {
+    const video = crear('video', clase);
+    video.src = src + '#t=0.1';
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.setAttribute('aria-hidden', 'true');
+    return video;
 }
 
 // Trae la publicación con Fetch y la muestra en el modal. "miniatura" puede ser null
@@ -1087,9 +1231,14 @@ function iniciarBuscador() {
                 const a = crear('a', 'buscador-item');
                 a.href = urlPerfil(p.nombreUsuario) + '#publicacion-' + p.id;
                 a.setAttribute('role', 'option');
-                const img = crear('img', 'buscador-miniatura');
-                img.src = p.imagen;
-                img.alt = '';
+                let img;
+                if (p.esVideo) {
+                    img = crearMiniaturaVideo(p.imagen, 'buscador-miniatura');
+                } else {
+                    img = crear('img', 'buscador-miniatura');
+                    img.src = p.imagen;
+                    img.alt = '';
+                }
                 const texto = crear('span', 'lateral-texto');
                 texto.append(crear('span', 'lateral-usuario', p.titulo), crear('span', 'lateral-sub', 'de ' + p.nombreUsuario));
                 a.append(img, texto);

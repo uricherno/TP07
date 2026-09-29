@@ -77,9 +77,19 @@
         <div class="grilla-perfil" id="grillaPerfil">
             @foreach (var p in publicaciones)
             {
+                string urlMedia = Imagenes.Url(p);
                 <button type="button" class="miniatura" data-id="@p.Id" aria-label="Ver publicación: @p.Titulo">
-                    <img src="@Imagenes.Url(p)" alt="@p.Titulo" loading="lazy"
-                         onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+                    @if (Imagenes.EsVideo(urlMedia))
+                    {
+                        @* #t=0.1 hace que el navegador muestre el primer cuadro como miniatura *@
+                        <video src="@(urlMedia)#t=0.1" muted playsinline preload="metadata" aria-hidden="true"></video>
+                        <span class="miniatura-video" aria-hidden="true">▶</span>
+                    }
+                    else
+                    {
+                        <img src="@urlMedia" alt="@p.Titulo" loading="lazy"
+                             onerror="this.onerror=null; this.src='/img/placeholder.svg';" />
+                    }
                     <span class="miniatura-overlay">
                         <span>❤ <span class="miniatura-likes">@p.CantidadMeGusta</span></span>
                         <span>💬 <span class="miniatura-comentarios">@p.Comentarios.Count</span></span>

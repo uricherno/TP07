@@ -460,7 +460,8 @@ body:has(.perfil) {
     margin-bottom: .4rem;
 }
 
-.zona-imagen img {
+.zona-imagen img,
+.zona-imagen video {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -731,15 +732,29 @@ body:has(.perfil) {
     animation: aparecer .35s ease both;
 }
 
-.miniatura img {
+.miniatura img,
+.miniatura video {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform .3s ease;
 }
 
-.miniatura:hover img {
+.miniatura:hover img,
+.miniatura:hover video {
     transform: scale(1.04);
+}
+
+/* ▶ en la esquina de las miniaturas que son videos */
+.miniatura-video {
+    position: absolute;
+    top: .45rem;
+    right: .5rem;
+    color: #fff;
+    font-size: .9rem;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+    pointer-events: none;
 }
 
 .miniatura-overlay {
@@ -904,6 +919,61 @@ a.avatar:hover {
     background: var(--borde-suave);
     border-block: 1px solid var(--borde-suave);
     pointer-events: none; /* que no se pueda arrastrar la imagen al hacer doble click */
+}
+
+/* Videos: no se recortan. Hasta que se conoce su tamaño se usa 4:5; después site.js pone
+   su proporción real (entre 4:5 y 16:9). Si son más altos, se ven enteros con franjas negras. */
+.post-video {
+    display: block;
+    aspect-ratio: 4 / 5;
+    object-fit: contain;
+    background: #000;
+}
+
+/* Botón de sonido sobre los videos */
+.btn-sonido {
+    position: absolute;
+    right: .75rem;
+    bottom: .75rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .6);
+    color: #fff;
+    cursor: pointer;
+    transition: background var(--transicion);
+}
+
+.btn-sonido:hover {
+    background: rgba(0, 0, 0, .8);
+}
+
+.btn-sonido svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.btn-sonido .ondas,
+.btn-sonido .cruz {
+    fill: none;
+}
+
+/* Sin sonido: parlante con cruz. Con sonido: parlante con ondas. */
+.btn-sonido .ondas,
+.btn-sonido.activo .cruz {
+    display: none;
+}
+
+.btn-sonido.activo .ondas {
+    display: inline;
 }
 
 /* Corazón blanco grande que aparece al dar Me Gusta con doble click, como en Instagram */
